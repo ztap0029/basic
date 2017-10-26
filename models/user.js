@@ -7,8 +7,9 @@ let userSchema = mongoose.Schema({
         type: String,
         default:uuid.v4,
     },
-  role_id: {
+  role: {
         type: String,
+        default: 'user',
     },
     name: {
         type: String,

@@ -3,53 +3,31 @@ const bcrypt = require('bcryptjs');
 const UserToken = require('../models/userToken');
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
+const jwtBlacklist = require('jwt-blacklist')(jwt);
 var config = require('../config/database');
 
 module.exports = {
   getOneUser,
   getUserById,
-  login,
   createUser,
   encryptUserPassword,
   sendVerificationEmail,
-  verifyEmail
+  verifyEmail,
+  getAllUsers
 };
 
 function getUserById(id,cb){
   User.findById(id,cb);
 }
 
-function login(req,res,next){
-  var email = req.body.email;
-  var password = req.body.password;
-  User.findOne({email:email},function(err,user){
-    if(err) return res.status(400).send({ error: 'Email OR Password not matched',status_code:400 });
-    if(!user) return res.status(400).send({ error: 'Email OR Password not matched',status_code:400 });
-    //var hashPassword = user.password;
-    console.log("user is:"+user);
-    bcrypt.compare(password,user.password,function(err,isMatched){
-      if(err) return res.status(401).send({error:'Unauthorized user',status_code:401});
-      if(isMatched){
-        var token = jwt.sign({user: user}, config.secret, {
-          expiresIn: '60000000'
-          // algorithm: 'HS256'
-        });
-          //var token = jwt.sign(user,config.secret);
-          //user.push(token:token);
-            res.data = {sucess:true,user:{
-                id:user.id,
-                email:user.email,
-                token:'bearer '+token
-            }
-          };
-          next();
-      }else {
-        res.status(400).send({error:'Password not matched',status_code:400});
-      }
-    });
-  });
+function getAllUsers(req,res,next){
+  User.find({},'updatedAt createdAt email email_verified id').then(user=>{
+    res.data = user;
+    next();
+  }).catch(err=>{
+    return res.status(401).send({ error: 'No user found',status_code:401 });
+  })
 }
-
 
 function encryptUserPassword(req,res,next){
   if (req.body && 'password' in req.body) {
